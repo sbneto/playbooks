@@ -1,0 +1,22 @@
+---
+- name: Installing packages with apt-get
+  apt: name={{ item.pkg }} state=present
+  with_items:
+    - { pkg: htop }
+    - { pkg: python3 }
+    - { pkg: python3-pip }
+    - { pkg: nginx }
+    - { pkg: supervisor }
+    - { pkg: python3-bs4 }
+    - { pkg: git }
+
+- name: Installing Python 2.7 packages with pip
+  pip: name={{ item.name }}
+  with_items:
+    - { name: dopy }
+
+- name: Installing Python 3 packages with pip
+  pip: name={{ item.name }} executable=pip3
+  with_items:
+    - { name: flask }
+    - { name: gunicorn }

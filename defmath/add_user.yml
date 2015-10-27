@@ -1,0 +1,29 @@
+---
+# Parameters
+# @username: user to be created at the remote machine
+# @email: email of the user to be created, public and private keys are
+# going to be sent to this email.
+# @from_email: responsible for the new user execution
+# @smtp_user: user fot the smtp server to send the email
+# @smtp_password: password to use the smtp server
+# @domain: name of the domain for the new user
+
+- name: Creating user
+  user: >
+    name="{{ username }}"
+    shell="/bin/bash"
+    state=present
+  register: new_user
+
+- name: Creating .ssh folder in home
+  file: >
+    path="/home/{{ username }}/.ssh" 
+    owner="{{ username }}"
+    group="{{ username }}"
+    state=directory
+    mode=0700
+  when: new_user.changed
+
+- include: >
+    reset_user.yml 
+  when: new_user.changed

@@ -1,0 +1,20 @@
+---
+
+# Parameters
+# @username: user to be created at the remote machine
+# @email: email of the user to be created, public and private keys are
+# going to be sent to this email.
+# @smtp_user: user fot the smtp server to send the email
+# @smtp_password: password to use the smtp server
+# @client_id_v1: DO old api client id
+# @token_v1: DO old api token
+# @address: Address of the instance for which we want to create a dns domain
+# @domain: name of the domain we want to create
+
+- include: >
+    add_user.yml 
+- include: >
+    add_user_nginx.yml 
+- include: >
+    digitalocean_set_dns.yml 
+    address="{{ groups[group_names[0]][0] }}"

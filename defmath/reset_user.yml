@@ -1,0 +1,47 @@
+---
+# Parameters
+# @username: user to be created at the remote machine
+# @to_email: email of the user to be created, public and private keys are
+# going to be sent to this email.
+# @from_email: responsible for the reset execution
+# @smtp_user: user fot the smtp server to send the email
+# @smtp_password: password to use the smtp server
+# @domain: name of the domain for the new user
+
+- name: Generating ssh keys
+  shell: >
+    echo "y" | ssh-keygen -t rsa -b 4096 -f "/home/{{ username }}/.ssh/id_rsa" -q -N "" || true
+  become: yes
+  become_user: "{{ username }}"
+
+- name: Sending keys to user email
+  mail: >
+    host='smtp.gmail.com'
+    port=587
+    username="{{ smtp_user }}"
+    password="{{ smtp_password }}"
+    subject="Account created"
+    body="{{ lookup('template', 'files/new_user/mail_template') }}"
+    from="{{ from_email }}"
+    to="{{ to_email }}"
+    attach="/home/{{ username }}/.ssh/id_rsa /home/{{ username }}/.ssh/id_rsa.pub"
+    headers=Reply-To="{{ from_email }}"
+    charset=utf8
+
+- name: Removing private key
+  file: >
+    path="/home/{{ username }}/.ssh/id_rsa"
+    state=absent
+
+- name: Removing previous authorized_keys
+  file: >
+    path="/home/{{ username }}/.ssh/authorized_keys"
+    state=absent
+
+- name: Creating new authorized_keys
+  command: mv "/home/{{ username }}/.ssh/id_rsa.pub" "/home/{{ username }}/.ssh/authorized_keys"
+
+- name: Setting authorized_keys permissions
+  file: >
+    path="/home/{{ username }}/.ssh/authorized_keys"
+    mode=0600

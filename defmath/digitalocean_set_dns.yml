@@ -1,0 +1,9 @@
+---
+
+- name: Creating a domain in DO for the given IP
+  digital_ocean_domain: >
+    api_key="{{ token_v1 }}"
+    client_id="{{ client_id_v1 }}"
+    state=present
+    name="{{ domain }}"
+    ip="{{ address }}"

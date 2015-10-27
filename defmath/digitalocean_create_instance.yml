@@ -1,0 +1,52 @@
+---
+- name: Finding the local user
+  command: whoami
+  register: local_user
+
+- name: Creating a ssh key for the new machine in the local user .ssh home folder
+  shell: >
+    echo "n" | ssh-keygen -t rsa -b 4096 -f "/home/{{ local_user.stdout_lines[0] }}/.ssh/{{ instance_name }}" -q -N "" || true
+
+- name: Removing previous ssh key from DO in case it already exists
+  digital_ocean: >
+    state=absent
+    command=ssh
+    name="{{ instance_name }}"
+    api_token="{{ token }}"
+
+- name: Adding new ssh key to DO
+  digital_ocean: >
+    state=present
+    command=ssh
+    name="{{ instance_name }}"
+    ssh_pub_key="{{ lookup('file', '/home/' + local_user.stdout_lines[0] + '/.ssh/' + instance_name + '.pub') }}"
+    api_token="{{ token }}"
+  register: keys
+
+- name: Creating new droplet in DO
+  digital_ocean: >
+    unique_name=yes
+    state=present
+    command=droplet
+    name="{{ instance_name }}"
+    api_token="{{ token }}"
+    size_id=512mb
+    region_id=nyc3
+    image_id=ubuntu-15-04-x64
+    ssh_key_ids="{{ keys.ssh_key.id }}"
+    wait_timeout=500
+  register: instance
+
+- name: Assigning the added key to the just created droplet
+  add_host: >
+    hostname="{{ instance.droplet.ip_address }}"
+    groups="{{ instance_name }}"
+    ansible_ssh_user=root
+    ansible_ssh_private_key_file="/home/{{ local_user.stdout_lines[0] }}/.ssh/{{ instance_name }}"
+
+- name: Waiting for ssh
+  wait_for: > 
+    port=22
+    host="{{ instance.droplet.ip_address }}"
+    search_regex=OpenSSH
+    delay=1

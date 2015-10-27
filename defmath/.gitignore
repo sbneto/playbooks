@@ -1,0 +1,5 @@
+vars/*
+roles/*
+inventory/*
+main.yml
+main_reset.yml

@@ -1,0 +1,42 @@
+- name: Setup RepNerv WebServer
+  hosts: repnerv
+  sudo: False
+
+  pre_tasks:
+    - apt: update_cache=yes
+      sudo: yes
+
+    - apt: name={{ item.pkg }} state=present
+      sudo: yes
+      with_items:
+        - { pkg: htop }
+        - { pkg: python3 }
+        - { pkg: python3-pip }
+        - { pkg: nginx }
+        - { pkg: supervisor }
+        - { pkg: python3-bs4 }
+
+    - pip: name={{ item.name }} executable=pip3
+      become: yes
+      become_method: sudo
+      with_items:
+        - { name: flask }
+        - { name: gunicorn }
+
+    - file: path=/home/sam/www/static state=directory
+    - copy: src=files/nginx/sam dest=/etc/nginx/sites-available/sam owner=root group=root mode=0644
+      sudo: yes
+    - copy: src=files/supervisor/rastreio.conf dest=/etc/supervisor/conf.d/rastreio.conf owner=root group=root mode=0644
+      sudo: yes
+
+  roles:
+    - { role: gce_git_clone,
+        repository_credentials: vars/repositories/git.yml,
+        dest: /home/sam/www/rastreio}
+
+  tasks:    
+    - service: name=nginx state=reloaded
+      sudo: yes
+    - command: sudo supervisorctl reread
+    - command: sudo supervisorctl update
+    - command: sudo supervisorctl start rastreio

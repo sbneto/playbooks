@@ -1,0 +1,51 @@
+---
+- name: Create digitalocean instance.
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - include_vars: "vars/digitalocean/token.yml"
+    - name: Preparing to create DO instance
+      include: >
+        digitalocean_create_instance.yml
+        instance_name=giskard
+        token="{{ DO.token }}"
+    - name: Preparing to create DO dns entry
+      include: >
+        digitalocean_set_dns.yml
+        address="{{ groups['giskard'][0] }}"
+        domain=giskard.defmath.net
+        client_id_v1="{{ DO.client_id_v1 }}"
+        token_v1="{{ DO.token_v1 }}"
+
+- name: Setup Python
+  hosts: giskard
+  gather_facts: no
+  tasks:
+    - name: Updating apt-get
+      raw: sudo apt-get update
+    - name: Installing python 2.7 and pip
+      raw: sudo apt-get -y install python python-pip
+    - name: Updating pip
+      raw: sudo pip install -U pip
+
+- name: Setup RepNerv
+  hosts: giskard
+  pre_tasks:
+    - name: Preparing to install packages
+      include: install_packages.yml
+
+  tasks:
+    - include_vars: "vars/mail/google_smtp.yml"
+    - include_vars: "vars/digitalocean/token.yml"
+
+    - name: Preparing to add user
+      include: >
+        add_user_with_homepage.yml
+        username=
+        to_email=
+        from_email=
+        domain=
+        client_id_v1="{{ DO.client_id_v1 }}"
+        token_v1="{{ DO.token_v1 }}"
+        smtp_user="{{ smtp.user }}"
+        smtp_password="{{ smtp.password }}"

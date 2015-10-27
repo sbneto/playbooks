@@ -1,0 +1,48 @@
+---
+# Parameters
+# @username: user for which we want to setup a www folder in the home folder
+# that will be his webserver root in nginx
+
+- name: Creating web folder
+  file: >
+    path="/home/{{ username }}/www" 
+    state=directory
+    owner={{ username }}
+    group={{ username }}
+    recurse=yes
+  become: yes
+  become_method: sudo
+
+- name: Creating landing page
+  template: >
+    src="files/nginx/landing"
+    dest="/home/{{ username }}/www/index.html" 
+    owner={{ username }}
+    group={{ username }}
+  become: yes
+  become_method: sudo
+
+- name: Setting nginx configuration files for sites-available
+  template: >
+    src="files/nginx/template"
+    dest="/etc/nginx/sites-available/{{ username }}"
+    owner=root
+    group=root
+    mode=0644
+  become: yes
+  become_method: sudo
+
+- name: Creating simbolic link in sites-enabled
+  file: >
+    src="/etc/nginx/sites-available/{{ username }}"
+    dest="/etc/nginx/sites-enabled/{{ username }}"
+    owner=root
+    group=root
+    state=link
+  become: yes
+  become_method: sudo
+
+- name: Reloading nginx sites-available
+  service: name=nginx state=reloaded
+  become: yes
+  become_method: sudo

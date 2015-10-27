@@ -1,0 +1,13 @@
+Congratulations, the user {{ username }} was successfully created on {{ domain }}. Attached are your public (id_rsa.pub) and private (id_rsa) keys. To access your account, please use the following command.
+
+ssh {{ username }}@{{ username }}.{{ domain }} -i path_to/id_rsa
+
+If you have problems with the private key permissions, run the following command before trying again.
+
+chmod 600 path_to/id_rsa
+
+Your webserver root is the folder ~/www, currently you can access your landing page through {{ domain }}.
+
+---
+
+This is an automated message.
